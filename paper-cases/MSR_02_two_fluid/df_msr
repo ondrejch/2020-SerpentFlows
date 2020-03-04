@@ -1,0 +1,306 @@
+/*This is a  model of the:
+Molten Salt iso-Breeder Reactor
+Core Design Team: Dallas Moser, Alex Wheeler, Vik, Singh
+Advisor: Dr. Ondrej Chvala
+*/
+
+
+%------ graphite hexagon and fuel channel cells ------	
+surf 201 hexxc 0   0   6.76032821571	     % HEX FOR GRAPHITE
+surf 202 hexxc 0   0   7.0	     % HEX FOR SLIT
+surf 203 cyl   0   0   2.11127784043	         % CENTER HOLE
+surf 204 cyl   0   0   4.5          % INTERMEDIATE GRAPHITE RING
+surf 205 cyl   0   0   4.97066334803          % OUTER FUEL RING
+	
+% FUEL CELL U2
+cell  7 0 fuel -203 
+cell 13 0 graphite 203 -204
+cell  1 0 fuel 204 -205 
+cell 10 0 graphite -201 203 205
+cell 11 0 blanket  -202 201  
+cell 12 0 outside  202 
+
+%-------material definition--------------
+%NOTE: VOLUMES OR MASS OF EACH MAY NEED TO 
+%BE CALCULATED FOR BURNUP CALCULATIONS
+
+%  FUEL SALT: 68.5-31.3-0.2 LiF-BeF2-UF4 at 900K 
+%  DENSITY: 2.03434 g/cc
+%  MELT TEMP: 450C or 742.15K
+%  MATERIAL INFO FROM ONRL-4528 TALBE 3.1.
+%  MAY NEED VOLUME OR MASS FOR BURNUP CALCULATIONS
+mat fuel -2.03434 burn 1 vol 1e6
+rgb 130 32 144
+3006.09c   -0.000725     %  Li6
+3007.09c  -14.495960     %  Li7
+40090.09c  -8.508748     %  Be9
+9019.09c  -75.588074     %  F19
+92233.09c  -1.265844     %  U233
+92234.09c  -0.140649     %  U234
+
+%  BLANKET SALT: 71-27-2 LiF-ThF4-BeF2 at 900K
+%  DENSITY: 4.43711 g/cc
+%  MELT TEMP: 560C or 833.15K
+%  MATERIAL INFO FROM ONRL-4528 TALBE 3.1.
+%  MAY NEED VOLUME OR MASS FOR BURNUP CALCULATIONS
+mat blanket -4.43711 burn 1 vol 1e6
+rgb 0 157 254 
+3006.09c   -0.000243     %  Li6
+3007.09c   -4.855845     %  Li7
+40090.09c  -0.175712     %  Be9
+9019.09c  -33.892970     %  F19
+90232.09c -61.052512     %  Th232
+91233.09c  -0.022718     %  Pa233
+
+%  NUCLEAR GRAPHITE: Natural concentration of carbon
+%  DENSITY: 1.82 G/CC
+mat graphite -1.82 moder graph 6000
+rgb 130 130 130
+6000.09c 1
+%  THERMAL SCATTERING LIBRARY FOR GRAPHITE
+therm graph 973 gre7.18t gre7.20t
+
+%  HELIUM: gas due to alpha particles
+%  DENSITY: 54.19 E-6 g/cc
+mat he -54.19E-6
+rgb 255 0 0
+2004.09c 1
+
+% CONTROL ROD: NATURAL BORON at 900K
+% DENSITY: 2.3 g/cc
+% MELT TEMP: 2076C or 2349.15K
+% 19.9 B10 and 80.1 B11
+mat absorber -2.3
+rgb 74 74 74
+5010.09c -0.199
+5011.09c -0.801
+
+%  TODO: Hastelloy
+mat hastelloy -8.86
+rgb 139 69 19
+28058.09c  -0.472120   %  Ni
+ 28060.09c  -0.181860   %  Ni
+ 28061.09c  -0.007905   %  Ni
+ 28062.09c  -0.025206   %  Ni
+ 28064.09c  -0.006419   %  Ni
+ 42100.09c  -0.015408   %  Mo
+ 42092.09c  -0.023744   %  Mo
+ 42094.09c  -0.014800   %  Mo
+ 42095.09c  -0.025472   %  Mo
+ 42096.09c  -0.026688   %  Mo
+ 42097.09c  -0.015280   %  Mo
+ 42098.09c  -0.038608   %  Mo
+ 24050.09c  -0.003041   %  Cr
+ 24052.09c  -0.058652   %  Cr
+ 24053.09c  -0.006651   %  Cr
+ 24054.09c  -0.001656   %  Cr
+ 26054.09c  -0.002923   %  Fe
+ 26056.09c  -0.045877   %  Fe
+ 26057.09c  -0.001059   %  Fe
+ 26058.09c  -0.000141   %  Fe
+ 14028.09c  -0.009223   %  Si
+ 14029.09c  -0.000468   %  Si
+ 14030.09c  -0.000309   %  Si
+ 25055.09c  -0.008000   %  Mn
+ 74182.09c  -0.001325   %  W
+ 74183.09c  -0.000715   %  W
+ 74184.09c  -0.001532   %  W
+ 74186.09c  -0.001422   %  W
+ 29063.09c  -0.002421   %  Cu
+ 29065.09c  -0.001079   %  Cu
+
+% set sym  12
+% set nfg  2  0.625E-6
+
+set bc 3
+
+% --- Neutron population and criticality cycles:
+
+set pop 5000 200 50
+
+
+%% --- Data Libraries
+set acelib "sss_endfb7u.xsdata"
+set nfylib "sss_endfb7.nfy"
+set declib "sss_endfb7.dec"
+	
+% PLOTS
+plot 1 3000 3000 0  -300 300  -80 560
+plot 2 3000 3000 0  -300 300  -80 560
+plot 3 3000 3000 29 %[250 -100 100 -100 100]
+	
+%___________Reprocessing/depletion___________
+%stockpile of extra Th
+mat Th_stock -11.7 burn 1 vol 1e6
+90232.09c 1.0 % Th-232
+
+%stockpile of extra U
+mat U_stock -19.1 burn 1 vol 1e6
+92233.09c 1.0 % U-233
+
+%bucket for Pr and U
+mat dumptank 0.0 burn 1 vol 1e6
+
+%tanks for offgases
+mat offgastankcore 0.0 burn 1 vol 1e6
+mat offgastankblanket 0.0 burn 1 vol 1e6
+
+%tanks for noblemetals
+mat noblemetalcore 0.0 burn 1 vol 1e6
+mat noblemetalblanket 0.0 burn 1 vol 1e6
+
+%tanks for lanthanides
+mat lanthtankcore 0.0 burn 1 vol 1e6
+mat lanthtankblanket 0.0 burn 1 vol 1e6
+
+%tanks for alkines and halogens
+mat alkhaltankcore 0.0 burn 1 vol 1e6
+mat alkhaltankblanket 0.0 burn 1 vol 1e6
+
+%_______mass flow definitions______
+mflow thor_in
+Th-232 3.5e-10
+
+mflow U_out
+U-233 1e-2
+Pr-233 1e-2
+%this number will depend on the chemical process's rate.
+%could possibly be modeled by a rate eqation: https://en.wikipedia.org/wiki/Rate_equation
+
+mflow U_in
+U-233 2.7e-10
+
+mflow offgasratecore
+Ne 1e-2
+Ar 1e-2
+He 1e-2
+Kr 1e-2
+Xe 1e-2
+Rn 1e-2
+
+mflow offgasrateblanket
+Ne 1e-2
+Ar 1e-2
+He 1e-2
+Kr 1e-2
+Xe 1e-2
+Rn 1e-2
+
+mflow offnoblecore
+Ru 1e-2
+Rh 1e-2
+Pd 1e-2
+Ag 1e-2
+Os 1e-2
+Ir 1e-2
+Pt 1e-2
+Au 1e-2
+Mo 1e-2 %Refractory metals
+Nb 1e-2
+Hf 1e-2
+
+mflow offnobleblanket
+Ru 1e-2
+Rh 1e-2
+Pd 1e-2
+Ag 1e-2
+Os 1e-2
+Ir 1e-2
+Pt 1e-2
+Au 1e-2
+Mo 1e-2 %Refractory metals
+Nb 1e-2
+Hf 1e-2
+
+mflow offlanthcore
+La 1e-4
+Ce 1e-4
+Pr 1e-4
+Nd 1e-4
+Pm 1e-4
+Sm 1e-4
+Eu 1e-4
+Gd 1e-4
+Tb 1e-4
+Dy 1e-4
+Ho 1e-4
+Er 1e-4
+Tm 1e-4
+Yb 1e-4
+Lu 1e-4
+
+mflow offlanthblanket
+La 1e-4
+Ce 1e-4
+Pr 1e-4
+Nd 1e-4
+Pm 1e-4
+Sm 1e-4
+Eu 1e-4
+Gd 1e-4
+Tb 1e-4
+Dy 1e-4
+Ho 1e-4
+Er 1e-4
+Tm 1e-4
+Yb 1e-4
+Lu 1e-4
+
+mflow offalkhalcore
+Rb 1e-4
+Cs 1e-4
+Sr 1e-4
+Ba 1e-4
+Br 1e-4
+I  1e-4
+
+mflow offalkhalblanket
+Rb 1e-4
+Cs 1e-4
+Sr 1e-4
+Ba 1e-4
+Br 1e-4
+I  1e-4
+
+set pcc 0 %predictor-corrector must be turned off to use depletion
+set gcu -1 %turning off group constant generation hastens the calculation
+set depmtx 1 %dumps depletion matrices if needed. should be one per burnt material.
+
+%syntax:
+% rc <from_mat> <to_mat> <mflow> <setting> where "setting" is either 0 or 1.
+
+rep the_reprocessing_scheme
+rc Th_stock blanket thor_in 1 %the number one indicates that a removal term appears in the bateman equations for thoriu$
+% and a corresponding addition term in the batemans for the blanket salt.
+rc U_stock fuel U_in 2
+rc blanket offgastankblanket offgasrateblanket 1
+rc fuel offgastankcore offgasratecore 1
+rc blanket noblemetalblanket offnobleblanket 1
+rc fuel noblemetalcore offnoblecore 1
+rc blanket lanthtankblanket offlanthblanket 1
+rc fuel lanthtankcore offlanthcore 1
+rc blanket alkhaltankblanket offalkhalblanket 1
+rc fuel alkhaltankcore offalkhalcore 1
+rc blanket U_stock U_out 1
+
+set printm 1 %prints out isotopic compositions of burnt materials over depletion
+set powdens 1E-2 % power density in [kW/g]
+%%%%%this is watts per cubic centimeter of heavy metal (pretty sure, power is nicer than powdens)
+
+dep
+pro the_reprocessing_scheme
+daystep
+0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208
+0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208
+0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208
+0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208 0.0208
+0.0417 0.0417 0.0417 0.0417 0.0417 0.0417 0.0417 0.0417 0.0417 0.0417 0.0417 0.0417
+0.0417 0.0417 0.0417 0.0417 0.0417 0.0417 0.0417 0.0417 0.0417 0.0417 0.0417 0.0417
+0.1250 0.1250 0.1250 0.1250 0.1250 0.1250 0.1250 0.1250
+0.2500 0.2500 0.2500 0.2500 0.2500 0.2500 0.2500 0.2500
+0.5000 0.5000 0.5000 0.5000 0.5000 0.5000 0.5000 0.5000
+%just a couple burn increments over 9 days
+
+set inventory
+Th-232
+U-233
